@@ -77,6 +77,7 @@ class InfoPanel;
 class Inspector;
 enum class InspectorPage;
 class MapDocument;
+class MapView3D;
 class MapViewBase;
 class MapViewToolBox;
 class ObjExportDialog;
@@ -372,6 +373,8 @@ public:
 
   void showLaunchEngineDialog();
 
+  void startPlayMode(bool fromCamera);
+
   bool canRevealMaterial() const;
   void revealMaterial();
 
@@ -390,6 +393,8 @@ public:
   MapViewBase* currentMapViewBase();
 
 private:
+  MapView3D* playModeView();
+
   const mdl::CompilationProfile* lastCompilationProfile() const;
   void setLastCompilationProfileName(std::string name);
   void loadLastCompilationProfileName();
