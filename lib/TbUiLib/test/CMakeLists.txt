@@ -17,6 +17,10 @@ target_sources(TbUiLibTest
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_InputEvent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_LaunchGameEngine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_MapWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeRawMouse.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeShowPre.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeTimeline.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeWorld.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_QPathUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_QPreferenceStore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_QPreferenceStoreUtils.cpp
@@ -25,6 +29,7 @@ target_sources(TbUiLibTest
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_RecentDocuments.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_KeyboardShortcutUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_LayerListBox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_KreedzBroomPreferencePane.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_SystemPaths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_TextOutputAdapter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_UpdateVersion.cpp
@@ -57,7 +62,13 @@ target_link_libraries(TbUiLibTest PRIVATE
   TbUiLib
   TbUiTestUtilsLib
   UpdateLib
+  TbCsLib
 )
+
+if(TB_XCB_XINPUT_FOUND)
+  target_link_libraries(TbUiLibTest PRIVATE PkgConfig::TB_XCB_XINPUT)
+  target_compile_definitions(TbUiLibTest PRIVATE TB_PLAY_MODE_XINPUT2)
+endif()
 
 set_target_properties(TbUiLibTest PROPERTIES AUTOMOC TRUE)
 
