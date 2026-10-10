@@ -1947,6 +1947,23 @@ void ActionManager::createRunMenu()
     [](const auto& context) { return context.hasDocument(); },
   }));
   runMenu.addSeparator();
+  runMenu.addItem(addAction(Action{
+    "Menu/Run/Play",
+    "Play (CS 1.6 Movement)",
+    ActionContext::Any,
+    KeySequence{"F7"},
+    [](auto& context) { context.mapWindow().startPlayMode(false); },
+    [](const auto& context) { return context.hasDocument(); },
+  }));
+  runMenu.addItem(addAction(Action{
+    "Menu/Run/Play From Camera",
+    "Play From Camera",
+    ActionContext::Any,
+    KeySequence{"Shift+F7"},
+    [](auto& context) { context.mapWindow().startPlayMode(true); },
+    [](const auto& context) { return context.hasDocument(); },
+  }));
+  runMenu.addSeparator();
   runMenu.addItem(
     addAction(Action{
       "Menu/Run/Rerun...",
