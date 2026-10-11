@@ -184,6 +184,11 @@ double PlayModeTimeline::nextTickMs() const
   return m_nextTickMs;
 }
 
+double PlayModeTimeline::framePeriodMs() const
+{
+  return m_framePeriodMs;
+}
+
 vm::vec3f PlayModeTimeline::latestViewAngles() const
 {
   auto angles = m_viewAngles;

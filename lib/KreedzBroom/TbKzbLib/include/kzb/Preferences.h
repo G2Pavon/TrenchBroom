@@ -113,5 +113,7 @@ inline auto PlayModeShowFallDamage =
 inline auto PlayModeSoundVolume = Preference<float>{"Controls/Play mode/Volume", 0.8f};
 inline auto PlayModeShowCrosshair =
   Preference<bool>{"Controls/Play mode/Show crosshair", true};
+// The measured display and command rates, to check them against fps_max.
+inline auto PlayModeShowFps = Preference<bool>{"Controls/Play mode/Show FPS", false};
 
 } // namespace tb::Preferences

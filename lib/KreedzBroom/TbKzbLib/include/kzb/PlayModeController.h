@@ -22,6 +22,7 @@
 #include <QElapsedTimer>
 
 #include "cs/scs.h"
+#include "kzb/PlayModeRateMeter.h"
 #include "kzb/PlayModeShowPre.h"
 #include "kzb/PlayModeSound.h"
 #include "kzb/PlayModeTimeline.h"
@@ -33,6 +34,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 class QInputEvent;
 class QKeyEvent;
@@ -101,6 +103,13 @@ private:
   // event time minus m_clock time, per source
   std::optional<double> m_eventClockOffset[2];
   PlayModeShowPre m_showPre;
+  // Show FPS: frames shown, and commands simulated at the end of their ticks with their
+  // msec. The text is refreshed a few times per second so it can be read.
+  PlayModeRateMeter m_frameRate;
+  PlayModeRateMeter m_commandRate;
+  std::vector<std::string> m_fpsLines;
+  bool m_fpsOnTarget = true;
+  double m_fpsLinesMs = -1.0e9;
   // when the last hard landing was reported on the HUD
   double m_fallShownMs = -1.0e9;
   uint32_t m_fallShownCount = 0;
@@ -160,6 +169,9 @@ public:
    */
   double msUntilNextFrame() const;
 
+  /** Called when a frame of play mode has been shown. */
+  void frameShown();
+
   void render(render::RenderContext& renderContext, render::RenderBatch& renderBatch);
 
 private:
@@ -168,6 +180,7 @@ private:
   bool tryPlaceAt(const vm::vec3f& origin, const vm::vec3f& angles);
   vm::vec3f eyePosition() const;
   void syncCamera();
+  void updateFpsLines(double nowMs);
   bool handleKey(const QKeyEvent& event, bool down);
   double nowMs() const;
   double eventTime(double timestampMs, EventSource source);

@@ -134,6 +134,9 @@ public:
   /** When the next tick ends, i.e. when the game would start its next frame. */
   double nextTickMs() const;
 
+  /** How long the game's frames last at the fps_max given to reset(). */
+  double framePeriodMs() const;
+
   /** The view angles including input that has not been simulated yet. */
   vm::vec3f latestViewAngles() const;
 

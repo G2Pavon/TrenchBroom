@@ -32,6 +32,7 @@
 #include <random>
 #include <vector>
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 namespace tb::kzb
@@ -350,6 +351,15 @@ TEST_CASE("PlayModeTimeline")
     const auto legacy99 = run(99.5, PlayModeFrameTiming::Legacy);
     CHECK(legacy99.size() == 99);
     CHECK(all(legacy99, 10));
+  }
+
+  SECTION("framePeriodMs")
+  {
+    auto timeline = PlayModeTimeline{};
+    timeline.reset(0.0, vm::vec3f{}, 99.5, PlayModeFrameTiming::Steam);
+    CHECK(timeline.framePeriodMs() == Catch::Approx(10.0));
+    timeline.reset(0.0, vm::vec3f{}, 99.5, PlayModeFrameTiming::Legacy);
+    CHECK(timeline.framePeriodMs() == Catch::Approx(1000.0 / 99.5));
   }
 
   SECTION("latestViewAngles includes input that is not simulated yet")

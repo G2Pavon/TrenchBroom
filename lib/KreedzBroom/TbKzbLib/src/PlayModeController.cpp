@@ -149,6 +149,7 @@ constexpr auto PreFadeMs = 500.0;
 
 // The last hard landing's damage stays up for a moment.
 constexpr auto FallFontScale = 1.3f;
+constexpr auto FpsFontScale = 1.0f;
 constexpr auto FallHoldMs = 2500.0;
 constexpr auto FallFadeMs = 500.0;
 
@@ -158,19 +159,33 @@ float fadeAlpha(const double ageMs, const double holdMs, const double fadeMs)
 }
 
 // Text centered on a screen position given in pixels from the bottom left.
+// Where HUD text is placed relative to its position.
+enum class HudAlign
+{
+  Center,
+  TopLeft,
+};
+
 class ScreenTextAnchor : public render::TextAnchor
 {
 private:
   vm::vec2f m_position;
+  HudAlign m_align;
 
 public:
-  explicit ScreenTextAnchor(const vm::vec2f& position)
+  explicit ScreenTextAnchor(const vm::vec2f& position, const HudAlign align)
     : m_position{position}
+    , m_align{align}
   {
   }
 
   vm::vec3f offset(const gl::Camera&, const vm::vec2f& size) const override
   {
+    if (m_align == HudAlign::TopLeft)
+    {
+      return vm::vec3f{
+        std::round(m_position.x()), std::round(m_position.y() - size.y()), 0.0f};
+    }
     return vm::vec3f{
       std::round(m_position.x() - size.x() / 2.0f),
       std::round(m_position.y() - size.y() / 2.0f),
@@ -193,7 +208,8 @@ void renderHudText(
   const float red,
   const float green,
   const float blue,
-  const float alpha = 1.0f)
+  const float alpha = 1.0f,
+  const HudAlign align = HudAlign::Center)
 {
   const auto fontSize = static_cast<size_t>(
     std::round(static_cast<float>(pref(Preferences::RendererFontSize)) * fontScale));
@@ -214,9 +230,9 @@ void renderHudText(
     shadow,
     transparent,
     string,
-    ScreenTextAnchor{pixel + vm::vec2f{shadowOffset, -shadowOffset}});
+    ScreenTextAnchor{pixel + vm::vec2f{shadowOffset, -shadowOffset}, align});
   textRenderer->renderStringOnTop(
-    renderContext, color, transparent, string, ScreenTextAnchor{pixel});
+    renderContext, color, transparent, string, ScreenTextAnchor{pixel, align});
   renderBatch.addOneShot(textRenderer);
 }
 
@@ -333,6 +349,10 @@ void PlayModeController::start(const bool fromCamera)
   m_showPre.reset(state);
   m_fallShownMs = -1.0e9;
   m_fallShownCount = state.fall_count;
+  m_frameRate.reset();
+  m_commandRate.reset();
+  m_fpsLines.clear();
+  m_fpsLinesMs = -1.0e9;
   std::ranges::fill(m_keyLastDownMs, 0.0);
   m_document.logger().info() << "Play mode: " << m_statusMessage;
 
@@ -467,8 +487,11 @@ void PlayModeController::update()
   // Replay all input up to now, one command at a time; normally this is exactly one, the
   // command whose frame is due.
   const auto now = nowMs();
+  auto tickEndMs = m_timeline.nextTickMs();
   while (m_timeline.advance(m_context.get(), now, 1) == 1)
   {
+    m_commandRate.add(tickEndMs, m_timeline.lastCommand().msec);
+    tickEndMs = m_timeline.nextTickMs();
     m_currentEye = eyePosition();
 
     auto state = scs_player_state{};
@@ -499,6 +522,60 @@ void PlayModeController::update()
 double PlayModeController::msUntilNextFrame() const
 {
   return std::max(m_timeline.nextTickMs() - nowMs(), 0.0);
+}
+
+void PlayModeController::frameShown()
+{
+  m_frameRate.add(nowMs());
+}
+
+void PlayModeController::updateFpsLines(const double nowMs)
+{
+  constexpr auto RefreshMs = 250.0;
+  if (nowMs - m_fpsLinesMs < RefreshMs)
+  {
+    return;
+  }
+  m_fpsLinesMs = nowMs;
+
+  // What the game makes at this fps_max: one frame, and one command, per frame period.
+  const auto target = 1000.0 / m_timeline.framePeriodMs();
+  const auto frames = m_frameRate.perSecond();
+  const auto commands = m_commandRate.perSecond();
+  const auto msec = m_commandRate.meanValue();
+
+  const auto format = [](const double value, const int decimals) {
+    auto str = std::ostringstream{};
+    str << std::fixed << std::setprecision(decimals) << value;
+    return str.str();
+  };
+
+  auto display = std::string{"Display  "} + (frames ? format(*frames, 1) : "-") + " fps";
+  if (const auto maxFrame = m_frameRate.maxIntervalMs())
+  {
+    display += "   longest frame " + format(*maxFrame, 1) + " ms";
+  }
+  auto motion =
+    std::string{"Motion  "} + (commands ? format(*commands, 1) : "-") + " fps";
+  if (commands && msec)
+  {
+    // The game time simulated per real second: below 1 when msec loses time.
+    motion += "   msec " + format(*msec, 2) + "   game speed "
+              + format(*msec * *commands / 1000.0, 3) + "x";
+  }
+  const auto timing =
+    pref(Preferences::PlayModeFrameTiming) == Preferences::PlayModeFrameTimingLegacy
+      ? "Legacy"
+      : "Steam";
+  const auto expected = std::string{"Target  "} + format(target, 1) + " fps   fps_max "
+                        + format(pref(Preferences::PlayModeFrameRate), 1) + ", " + timing;
+
+  m_fpsLines = {std::move(display), std::move(motion), expected};
+
+  // Within half a frame per second of the target
+  constexpr auto Tolerance = 0.5;
+  m_fpsOnTarget = frames && commands && std::abs(*frames - target) <= Tolerance
+                  && std::abs(*commands - target) <= Tolerance;
 }
 
 double PlayModeController::nowMs() const
@@ -645,6 +722,29 @@ void PlayModeController::render(
         0.4f,
         0.4f,
         alpha);
+    }
+  }
+
+  if (pref(Preferences::PlayModeShowFps))
+  {
+    // In the top left corner, green while both rates match what fps_max gives.
+    updateFpsLines(nowMs());
+    const auto fontSize = static_cast<float>(pref(Preferences::RendererFontSize));
+    const auto lineHeight = fontSize * FpsFontScale * 1.4f;
+    const auto margin = fontSize;
+    for (size_t i = 0; i < m_fpsLines.size(); ++i)
+    {
+      renderHudText(
+        renderContext,
+        renderBatch,
+        m_fpsLines[i],
+        FpsFontScale,
+        vm::vec2f{margin, height - margin - static_cast<float>(i) * lineHeight},
+        m_fpsOnTarget ? 0.4f : 1.0f,
+        m_fpsOnTarget ? 1.0f : 0.7f,
+        m_fpsOnTarget ? 0.4f : 0.2f,
+        1.0f,
+        HudAlign::TopLeft);
     }
   }
 

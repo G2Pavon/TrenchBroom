@@ -205,6 +205,12 @@ void KreedzBroomPreferencePane::createGui()
   left->addRow("", boolField("Show HUD", Preferences::PlayModeShowHud));
   left->addRow("", boolField("Show crosshair", Preferences::PlayModeShowCrosshair));
   left->addRow("", boolField("Show fall damage", Preferences::PlayModeShowFallDamage));
+  left->addRow(
+    "",
+    withToolTip(
+      boolField("Show FPS", Preferences::PlayModeShowFps),
+      "Shows how many frames are drawn and how many commands are simulated per second, "
+      "next to what fps_max should give."));
 
   right->addSection("Keys");
   right->addRow(

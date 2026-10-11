@@ -5,6 +5,7 @@ target_sources(TbKzbLibTest
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/RunAllTests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_KreedzBroomPreferencePane.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeRateMeter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeRawMouse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeShowPre.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tst_PlayModeTimeline.cpp

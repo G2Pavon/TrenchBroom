@@ -9,6 +9,7 @@ target_sources(TbKzbLib
     ${CMAKE_CURRENT_SOURCE_DIR}/src/KreedzBroomPreferencePane.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayMode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayModeController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayModeRateMeter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayModeRawMouse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayModeShowPre.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayModeSound.cpp
@@ -22,6 +23,7 @@ target_sources(TbKzbLib
     ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/KreedzBroomPreferencePane.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/PlayMode.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/PlayModeController.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/PlayModeRateMeter.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/PlayModeRawMouse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/PlayModeShowPre.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/kzb/PlayModeSound.h

@@ -56,6 +56,7 @@ PlayMode::PlayMode(
   connect(&m_view, &QOpenGLWidget::frameSwapped, this, [this]() {
     if (active())
     {
+      m_controller->frameShown();
       m_frameTimer.start(static_cast<int>(std::ceil(m_controller->msUntilNextFrame())));
     }
   });
