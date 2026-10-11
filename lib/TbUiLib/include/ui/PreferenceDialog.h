@@ -23,6 +23,8 @@
 
 #include "base/NotifierConnection.h"
 
+#include <functional>
+
 class QDialogButtonBox;
 class QStackedWidget;
 class QToolBar;
@@ -51,6 +53,10 @@ private:
 public:
   PreferenceDialog(
     AppController& appController, MapDocument* document, QWidget* parent = nullptr);
+
+  /** KreedzBroom: adds a pane after the built-in ones. */
+  static void addPane(
+    QString iconName, QString name, std::function<PreferencePane*()> createPane);
 
 protected: // QWidget overrides
   void closeEvent(QCloseEvent* event) override;

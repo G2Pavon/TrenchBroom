@@ -23,9 +23,12 @@
 #include "ui/MapViewBase.h"
 
 #include <filesystem>
+#include <functional>
+#include <memory>
 #include <vector>
 
 class QKeyEvent;
+class QTimer;
 
 namespace tb
 {
@@ -37,6 +40,27 @@ class PerspectiveCamera;
 namespace ui
 {
 class FlyModeHelper;
+class MapView3D;
+class MapWindow;
+
+/**
+ * KreedzBroom: play mode (lib/KreedzBroom) takes over a 3D view while it is active. It
+ * receives the view's input through an event filter.
+ */
+class MapView3DPlayMode
+{
+public:
+  virtual ~MapView3DPlayMode();
+
+  virtual bool active() const = 0;
+  virtual void start(bool fromCamera) = 0;
+  virtual void preRender() = 0;
+  virtual void render(
+    render::RenderContext& renderContext, render::RenderBatch& renderBatch) = 0;
+};
+
+using MapView3DPlayModeFactory = std::function<std::unique_ptr<MapView3DPlayMode>(
+  MapView3D& view, MapDocument& document, gl::PerspectiveCamera& camera)>;
 
 class MapView3D : public MapViewBase
 {
@@ -44,7 +68,10 @@ class MapView3D : public MapViewBase
 private:
   std::unique_ptr<gl::PerspectiveCamera> m_camera;
   std::unique_ptr<FlyModeHelper> m_flyModeHelper;
+  std::unique_ptr<MapView3DPlayMode> m_playMode;
   bool m_ignoreCameraChangeEvents = false;
+  // Paces fly mode: the application does not wait for vsync (see kzb::initialize).
+  QTimer* m_frameTimer = nullptr;
 
   NotifierConnection m_notifierConnection;
 
@@ -53,6 +80,10 @@ public:
   ~MapView3D() override;
 
   const gl::PerspectiveCamera& perspectiveCamera() const;
+
+  static void setPlayModeFactory(MapView3DPlayModeFactory factory);
+  /** Starts play mode in the window's current 3D view, or else its first visible one. */
+  static void startPlayMode(MapWindow& window, bool fromCamera);
 
 private:
   void initializeCamera();

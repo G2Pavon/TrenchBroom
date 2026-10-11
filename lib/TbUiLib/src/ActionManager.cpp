@@ -35,6 +35,7 @@
 #include "ui/AppController.h" // IWYU pragma: keep
 #include "ui/Inspector.h"
 #include "ui/MapView.h"
+#include "ui/MapView3D.h"
 #include "ui/MapViewBase.h"
 #include "ui/MapViewToolBox.h" // IWYU pragma: keep
 #include "ui/MapWindow.h"
@@ -1946,6 +1947,25 @@ void ActionManager::createRunMenu()
     [](auto& context) { context.mapWindow().showLaunchEngineDialog(); },
     [](const auto& context) { return context.hasDocument(); },
   }));
+  runMenu.addSeparator();
+  runMenu.addItem(addAction(
+    Action{
+      "Menu/Run/Play",
+      "Play (CS 1.6 Movement)",
+      ActionContext::Any,
+      KeySequence{"F7"},
+      [](auto& context) { MapView3D::startPlayMode(context.mapWindow(), false); },
+      [](const auto& context) { return context.hasDocument(); },
+    }));
+  runMenu.addItem(addAction(
+    Action{
+      "Menu/Run/Play From Camera",
+      "Play From Camera",
+      ActionContext::Any,
+      KeySequence{"Shift+F7"},
+      [](auto& context) { MapView3D::startPlayMode(context.mapWindow(), true); },
+      [](const auto& context) { return context.hasDocument(); },
+    }));
   runMenu.addSeparator();
   runMenu.addItem(
     addAction(Action{

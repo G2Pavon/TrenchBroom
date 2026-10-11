@@ -32,6 +32,7 @@
 #include <QtGlobal>
 
 #include "base/PreferenceManager.h"
+#include "kzb/KreedzBroom.h"
 #include "prefs/Preferences.h"
 #include "ui/Action.h"
 #include "ui/ActionBuilder.h"
@@ -265,6 +266,7 @@ int main(int argc, char* argv[])
   format.setAlphaBufferSize(0);
   format.setSamples(4);
   QSurfaceFormat::setDefaultFormat(format);
+  tb::kzb::initialize();
 
   // Makes all QOpenGLWidget in the application share a single context
   // (default behaviour would be for QOpenGLWidget's in a single top-level window to share

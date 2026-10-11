@@ -47,6 +47,8 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <utility>
+#include <vector>
 
 namespace tb::ui
 {
@@ -55,6 +57,19 @@ namespace
 
 constexpr int PreferenceDialogMinWidth = 800;
 constexpr int PreferenceDialogMinHeight = 300;
+
+struct ExtraPane
+{
+  QString iconName;
+  QString name;
+  std::function<PreferencePane*()> createPane;
+};
+
+auto& extraPanes()
+{
+  static auto panes = std::vector<ExtraPane>{};
+  return panes;
+}
 
 } // namespace
 
@@ -93,6 +108,12 @@ PreferenceDialog::PreferenceDialog(
   }
 
   connectObservers();
+}
+
+void PreferenceDialog::addPane(
+  QString iconName, QString name, std::function<PreferencePane*()> createPane)
+{
+  extraPanes().push_back({std::move(iconName), std::move(name), std::move(createPane)});
 }
 
 void PreferenceDialog::closeEvent(QCloseEvent* event)
@@ -155,6 +176,14 @@ void PreferenceDialog::createGui()
   m_toolBar->addAction(
     keyboardImage, "Keyboard", [&]() { switchToPane(PrefPane::Keyboard); });
   m_toolBar->addAction(updateImage, "Update", [&]() { switchToPane(PrefPane::Update); });
+  for (auto i = 0; i < int(extraPanes().size()); ++i)
+  {
+    const auto& pane = extraPanes()[size_t(i)];
+    m_toolBar->addAction(
+      loadSVGIcon(pane.iconName.toStdString()), pane.name, [this, i]() {
+        switchToPane(PrefPane(int(PrefPane::Last) + 1 + i));
+      });
+  }
 
   // Don't display tooltips for pane switcher buttons...
   for (auto* button : m_toolBar->findChildren<QToolButton*>())
@@ -169,6 +198,10 @@ void PreferenceDialog::createGui()
   m_stackedWidget->addWidget(new MousePreferencePane{});
   m_stackedWidget->addWidget(new KeyboardPreferencePane{m_appController, m_document});
   m_stackedWidget->addWidget(new UpdatePreferencePane{m_appController});
+  for (const auto& pane : extraPanes())
+  {
+    m_stackedWidget->addWidget(pane.createPane());
+  }
 
   m_buttonBox = new QDialogButtonBox{
     PreferenceManager::instance().saveInstantly()

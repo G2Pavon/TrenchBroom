@@ -134,6 +134,7 @@ target_link_libraries(TrenchBroom
     TbBaseLib
     TbPreferencesLib
     TbUiLib
+    TbKzbLib
 )
 
 if(COMPILER_IS_MSVC)

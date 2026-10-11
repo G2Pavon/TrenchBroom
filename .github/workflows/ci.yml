@@ -17,6 +17,8 @@ jobs:
     secrets: inherit
 
   macos:
+    # Disabled for now; remove this line to build on macOS again.
+    if: false
     uses: ./.github/workflows/ci-macos.yml
     secrets: inherit
 

@@ -19,6 +19,9 @@
 
 #include "ui/MapView3D.h"
 
+#include <QScreen>
+#include <QTimer>
+
 #include "base/PreferenceManager.h"
 #include "gl/PerspectiveCamera.h"
 #include "mdl/BezierPatch.h"
@@ -59,6 +62,7 @@
 #include "ui/FlyModeHelper.h"
 #include "ui/MapDocument.h"
 #include "ui/MapViewToolBox.h"
+#include "ui/MapWindow.h"
 #include "ui/MoveObjectsToolController.h"
 #include "ui/RotateToolController.h"
 #include "ui/ScaleToolController.h"
@@ -74,8 +78,22 @@
 
 #include "vm/util.h"
 
+#include <algorithm>
+
 namespace tb::ui
 {
+namespace
+{
+
+auto& playModeFactory()
+{
+  static auto factory = MapView3DPlayModeFactory{};
+  return factory;
+}
+
+} // namespace
+
+MapView3DPlayMode::~MapView3DPlayMode() = default;
 
 MapView3D::MapView3D(
   AppController& appController, MapDocument& document, MapViewToolBox& toolBox)
@@ -90,6 +108,11 @@ MapView3D::MapView3D(
 
   m_camera->setFov(pref(Preferences::CameraFov));
 
+  if (playModeFactory())
+  {
+    m_playMode = playModeFactory()(*this, document, *m_camera);
+  }
+
   mapViewBaseVirtualInit();
 }
 
@@ -98,6 +121,35 @@ MapView3D::~MapView3D() = default;
 const gl::PerspectiveCamera& MapView3D::perspectiveCamera() const
 {
   return *m_camera;
+}
+
+void MapView3D::setPlayModeFactory(MapView3DPlayModeFactory factory)
+{
+  playModeFactory() = std::move(factory);
+}
+
+void MapView3D::startPlayMode(MapWindow& window, const bool fromCamera)
+{
+  auto* view = dynamic_cast<MapView3D*>(window.currentMapViewBase());
+  if (!view || !view->isVisible())
+  {
+    view = nullptr;
+    for (auto* view3D : window.findChildren<MapView3D*>())
+    {
+      if (view3D->isVisible())
+      {
+        view = view3D;
+        break;
+      }
+    }
+  }
+
+  if (view && view->m_playMode && !view->m_playMode->active())
+  {
+    view->m_flyModeHelper->resetKeys();
+    view->cancelMouseDrag();
+    view->m_playMode->start(fromCamera);
+  }
 }
 
 void MapView3D::initializeCamera()
@@ -197,6 +249,10 @@ void MapView3D::initializeGL()
 void MapView3D::bindEvents()
 {
   // Fly mode animation
+  m_frameTimer = new QTimer{this};
+  m_frameTimer->setSingleShot(true);
+  m_frameTimer->setTimerType(Qt::PreciseTimer);
+  connect(m_frameTimer, &QTimer::timeout, this, [this]() { update(); });
   connect(this, &QOpenGLWidget::frameSwapped, this, &MapView3D::updateFlyMode);
 }
 
@@ -204,7 +260,9 @@ void MapView3D::updateFlyMode()
 {
   if (m_flyModeHelper->anyKeyDown())
   {
-    update();
+    // The display's refresh rate, as with vsync.
+    const auto refreshRate = screen() ? screen()->refreshRate() : 60.0;
+    m_frameTimer->start(static_cast<int>(1000.0 / std::max(refreshRate, 1.0)));
   }
 }
 
@@ -548,6 +606,11 @@ ActionContext::Type MapView3D::viewActionContext() const
 void MapView3D::preRender()
 {
   const auto ignoreCameraUpdates = kdl::set_temp{m_ignoreCameraChangeEvents};
+  if (m_playMode && m_playMode->active())
+  {
+    m_playMode->preRender();
+    return;
+  }
   m_flyModeHelper->pollAndUpdate();
 }
 
@@ -582,6 +645,11 @@ void MapView3D::renderTools(
   render::RenderContext& renderContext,
   render::RenderBatch& renderBatch)
 {
+  if (m_playMode && m_playMode->active())
+  {
+    m_playMode->render(renderContext, renderBatch);
+    return;
+  }
   ToolBoxConnector::renderTools(renderContext, renderBatch);
 }
 

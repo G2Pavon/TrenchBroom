@@ -12,3 +12,5 @@ add_subdirectory(TbUiLib)
 add_subdirectory(TbVersionLib)
 add_subdirectory(UpdateLib)
 add_subdirectory(VmLib)
+
+add_subdirectory(KreedzBroom)
