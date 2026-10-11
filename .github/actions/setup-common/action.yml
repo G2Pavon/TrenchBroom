@@ -7,3 +7,5 @@ runs:
       uses: jurplel/install-qt-action@v4
       with:
         version: 6.10.*
+        # KreedzBroom's play mode sounds (QSoundEffect); without it the build is silent.
+        modules: qtmultimedia
