@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y software-properties-common && \
       mesa-common-dev \
       libgl1-mesa-dev \
       libglu1-mesa-dev \
+      libpulse0 \
       libglm-dev \
       pandoc \
       p7zip-full \
